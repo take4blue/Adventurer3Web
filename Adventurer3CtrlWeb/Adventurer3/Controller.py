@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
 import socket
+import requests
 import re
 from enum import Enum
 
-class machineStatus(Enum):
+class MachineStatus(Enum):
     Ready = 0
     Busy = 1
     Building = 2
@@ -11,57 +13,75 @@ class machineStatus(Enum):
 class Controller(object):
     """Adventurer3との通信用制御クラス"""
 
-    Adventurer3Port = 8899  # Adventurer3への接続ポート番号(一応固定)
+    DEFAULT_PORT = 8899  # Adventurer3への接続ポート番号(一応固定)
 
     def __init__(self, hostname):
         """コンストラクタ"""
         self.hostname = hostname
+        self.status = None
+        self.current_temp_bed = 0
+        self.current_temp_nozel = 0
+        self.target_temp_bed = 0
+        self.target_temp_nozel = 0
+        self.sd_max = 100
+        self.sd_progress = 0
+        self.limit_x = False
+        self.limit_y = False
+        self.limit_z = False
+        self.pos_e = 0
+        self.pos_x = 0
+        self.pos_y = 0
+        self.pos_z = 0
 
-    def Start(self):
-        """Adventurer3との接続開始"""
+    def start(self):
+        """
+        Adventurer3との接続開始
+        間違ったIPを指定すると、この関数のリターンにすごく時間がかかる場合がある。
+        (タイムアウトまで待つため）
+        """
         try:
             self.tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.tcp.connect((self.hostname, self.DEFAULT_PORT))
         except OSError:
             return False
-        self.tcp.connect((self.hostname, self.Adventurer3Port))
         self.tcp.send("~M601 S1\r\n".encode())
-        self.Recv()
+        self.recv()
         return True
 
-    def End(self):
+    def end(self):
         """Adventurer3との接続解除"""
-        if self.IsConnected:
+        if self.is_connected:
             self.tcp.send("~M602 S1\r\n".encode())
-            self.Recv()
+            self.recv()
             self.tcp.close()
             self.tcp = None
 
-    def Recv(self):
-        '''データの受信'''
+    def recv(self):
+        """データの受信"""
         data = self.tcp.recv(4096)
         if not data:
             return None
         else:
             return data.decode('utf-8')
 
-    def Send(self, data):
+    def send(self, data):
         """データの送信"""
-        if self.IsConnected:
+        if self.is_connected:
             sendData = "~" + data
             try:
                 self.tcp.send(sendData.encode())
-                return self.Recv()
+                return self.recv()
             except OSError:
                 return ""
 
-    def IsConnected(self):
+    def is_connected(self):
         """Adventurer3と接続中かどうか"""
         if not self.tcp:
             return False
         else:
             return True
 
-    def IsOk(self, data):
+    def is_ok(self, data):
         """返ってきたデータがOKかどうかの判断"""
         if not data:
             return False
@@ -74,94 +94,109 @@ class Controller(object):
             else:
                 return False
 
-    def UpdateMachneStatus(self):
+    def update_machine_status(self):
         """機器の状態取得"""
-        work = self.Send("M119")
-        if self.IsOk(work):
+        work = self.send("M119")
+        if self.is_ok(work):
             split = work.split("\n")
             for line in split:
                 trimLine = line.strip()
                 if trimLine.startswith("Endstop"):
                     endstop = trimLine.split(' ')
                     if len(endstop) == 4:
-                        self.LimitX = self.LimitY = self.LimitZ = True
+                        self.limit_x = self.limit_y = self.limit_z = True
                         if endstop[1].endswith("0"):
-                            self.LimitX = False
+                            self.limit_x = False
                         if endstop[2].endswith("0"):
-                            self.LimitY = False
+                            self.limit_y = False
                         if endstop[3].endswith("0"):
-                            self.LimitZ = False
+                            self.limit_z = False
                 elif trimLine.startswith("MachineStatus"):
                     if trimLine.endswith("READY"):
-                        self.Status = machineStatus.Ready
+                        self.status = MachineStatus.Ready
                     elif trimLine.endswith("BUILDING_FROM_SD"):
-                        self.Status = machineStatus.Building
+                        self.status = MachineStatus.Building
                     else:
-                        self.Status = machineStatus.Busy
+                        self.status = MachineStatus.Busy
 
-    def UpdateTempStatus(self):
+    def update_temp_status(self):
         """温度の情報を更新"""
-        work = self.Send("M105")
-        if self.IsOk(work):
+        work = self.send("M105")
+        if self.is_ok(work):
             split = work.split("\n")
             if len(split) >= 3:
                 splitLine = re.split(':|/|B', split[1].strip())
                 if len(splitLine) == 6:
-                    self.CurrentTempNozel = int(splitLine[1])
-                    self.TargetTempNozel = int(splitLine[2])
-                    self.CurrentTempBed = int(splitLine[4])
-                    self.TargetTempBed = int(splitLine[5])
+                    self.current_temp_nozel = int(splitLine[1])
+                    self.target_temp_nozel = int(splitLine[2])
+                    self.current_temp_bed = int(splitLine[4])
+                    self.target_temp_bed = int(splitLine[5])
     
-    def UpdateJobStatus(self):
+    def update_job_status(self):
         """JOB状態を更新"""
-        work = self.Send("M27")
-        if self.IsOk(work):
+        work = self.send("M27")
+        if self.is_ok(work):
             split = work.split("\n")
             if len(split) >= 3:
                 splitLine = re.split(' |/', split[1].strip())
                 if len(splitLine) == 5:
-                    self.SdProgress = int(splitLine[3])
-                    self.SdMax = int(splitLine[4])
+                    self.sd_progress = int(splitLine[3])
+                    self.sd_max = int(splitLine[4])
 
-    def UpdatePosition(self):
-        work = self.Send("M114")
-        if self.IsOk(work):
+    def update_position(self):
+        work = self.send("M114")
+        if self.is_ok(work):
             split = work.split("\n")
             if len(split) >= 3:
                 splitLine = re.split(' |:', split[1].strip())
                 if len(splitLine) == 10:
-                    self.PosX = float(splitLine[1])
-                    self.PosY = float(splitLine[3])
-                    self.PosZ = float(splitLine[5])
-                    self.PosE = float(splitLine[7])
+                    self.pos_x = float(splitLine[1])
+                    self.pos_y = float(splitLine[3])
+                    self.pos_z = float(splitLine[5])
+                    self.pos_e = float(splitLine[7])
 
-    def UpdateStatus(self):
+    def update_status(self):
         """Adventurer3の情報の取り出し(更新)"""
-        self.UpdateMachneStatus()
-        self.UpdateTempStatus()
-        self.UpdateJobStatus()
-        self.UpdatePosition()
+        self.update_machine_status()
+        self.update_temp_status()
+        self.update_job_status()
+        self.update_position()
 
-    def Led(self, OnOff):
+    def led(self, OnOff):
         """LEDの表示・消去"""
         if OnOff == True:
-            self.Send("M146 r255 g255 b255 F0")
+            self.send("M146 r255 g255 b255 F0")
         else:
-            self.Send("M146 r0 g0 b0 F0")
+            self.send("M146 r0 g0 b0 F0")
 
-    def StopJob(self):
+    def stop_job(self):
         """JOB停止"""
-        self.Send("M26")
+        self.send("M26")
 
-    def Stop(self):
+    def stop(self):
         """機器の緊急停止"""
-        self.Send("M112")
-        self.UpdatePosition()
+        self.send("M112")
+        self.update_position()
 
-    def GetStatus(self):
+    def get_status(self):
         return "ノズル {0}/{1}, ベッド {2}/{3}, 機器 {4}, 印刷 {5}/{6}, X:{7} Y:{8} Z:{9} E:{10}".\
-        format(self.CurrentTempNozel, self.TargetTempNozel,
-        self.CurrentTempBed, self.TargetTempBed,
-        self.Status,
-        self.SdProgress, self.SdMax,
-        self.PosX, self.PosY, self.PosZ, self.PosE)
+        format(self.current_temp_nozel, self.target_temp_nozel,
+        self.current_temp_bed, self.target_temp_bed,
+        self.status,
+        self.sd_progress, self.sd_max,
+        self.pos_x, self.pos_y, self.pos_z, self.pos_e)
+
+def download_image(address, timeout = 10):
+    """Adventurer3からカメラの静止画画像を取得する"""
+    url = 'http://' + address + ':8080/?action=snapshot'
+    response = requests.get(url, allow_redirects=False, timeout=timeout)
+    if response.status_code != 200:
+        e = Exception("HTTP status: " + response.status_code)
+        raise e
+
+    content_type = response.headers["content-type"]
+    if 'image' not in content_type:
+        e = Exception("Content-Type: " + content_type)
+        raise e
+
+    return response.content

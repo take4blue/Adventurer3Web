@@ -1,0 +1,33 @@
+﻿{% extends "layout.html" %}
+{% block content %}
+<div class="row">
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>ステータス</th>
+                <td id="Status">ステータス</td>
+            </tr>
+            <tr>
+                <th>ノズル温度</th>
+                <td id="CurrentTempNozel">現在値</td>
+                <td id="TargetTempNozel">設定値</td>
+            </tr>
+            <tr>
+                <th>ベッド温度</th>
+                <td id="CurrentTempBed">現在値</td>
+                <td id="TargetTempBed">設定値</td>
+            </tr>
+            <tr>
+                <th>進捗状況</th>
+                <td id="SdProgress">進捗度</td>
+                <td id="SdMax">進捗最大</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<div class="row">
+    <img id="image" src="image.jpg"/>
+</div>
+<script src="/static/scripts/update.js"></script>
+
+{% endblock %}

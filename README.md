@@ -19,5 +19,35 @@ Console.py‚ğAdventurer3‚ÌIPƒAƒhƒŒƒX‚ğˆø”‚É‹N“®‚·‚é‚ÆA'> '‚ÅƒRƒ}ƒ“ƒh“ü—Í‘Ò‚¿‚É‚
 Console.py‚ªƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚Ì‹N“_‚Æ‚È‚éƒ‚ƒWƒ…[ƒ‹B<br>
 Adventurer3/Controller.py‚ªAAdventurer3‚Æ‚Ì’ÊM‚ğs‚¤’ÊMƒ‚ƒWƒ…[ƒ‹B
 
+## ‘æ2’iŠK
+ƒ[ƒJƒ‹ƒGƒŠƒA“à‚É‚ ‚éƒ}ƒVƒ“‚ğwebƒx[ƒX‚Å‚ÌŠÄ‹
+
+ŠÄ‹‘ÎÛ‚ÍAƒ}ƒVƒ“‚ÌƒXƒe[ƒ^ƒX‚Æ“à‘ ƒJƒƒ‰B
+
+‚±‚±‚Å‚Ì–Ú“I‚ÍARaspberry Pi+Python‚ğg‚¢AWebƒx[ƒX‚Å‚ÌAdventurer3ŠÄ‹‹@”\‚ğì¬‚·‚é‚±‚ÆB
+
+- ‹@”\ŠT—v<br>
+Raspberry Pi‚Å‹N“®ŒãAhttp://Raspberry Pi‚ÌIP:8088 ‚ÉƒAƒNƒZƒX‚·‚é‚±‚Æ‚ÅAƒT[ƒo[‚ÉÚ‘±B<br>
+IPƒAƒhƒŒƒXw’è‰æ–Ê‚Æ‹@Šíó‘Ô•\¦‰æ–Ê‚Ì2‚Â‚Ì‰æ–Ê‚Å\¬‚³‚ê‚éB
+  - IPƒAƒhƒŒƒXw’è‰æ–Ê<br>
+Adventurer3‚ÌIPƒAƒhƒŒƒX‚ğw’è‚·‚éB
+  - ‹@Šíó‘Ô•\¦‰æ–Ê<br>
+Ú‘±‚µ‚Ä‚¢‚éAdventurer3‚Ìó‘Ô‚Æ“à‘ ƒJƒƒ‰‚ÅB‰e‚µ‚½ó‘Ô‚ğ•\¦‚·‚éB
+- ƒvƒƒOƒ‰ƒ€‚Ì\¬<br>
+Adventurer3/views.py‚ªIPƒAƒhƒŒƒXw’è‰æ–ÊE‹@Šíó‘Ô•\¦‰æ–Ê‚ğ§Œä‚·‚é‚½‚ß‚ÌƒR[ƒhB<br>
+staticˆÈ‰º‚ÌƒtƒHƒ‹ƒ_‚É“ü‚Á‚Ä‚¢‚é‚Ì‚ÍAhtml‚Æ‚»‚ê‚ÉŠÖ˜A‚·‚éƒtƒ@ƒCƒ‹ŒQB<br>
+staticˆÈ‰º‚ÍAŠî–{“I‚ÉAVisual Studio‚ÅPython‚ÌWebƒvƒƒWƒFƒNƒg‚ğV‹K‚Éì¬‚µ‚½Û‚Éæ‚è‚Ü‚ê‚½ƒtƒ@ƒCƒ‹‚É‚È‚éB<br>
+static/scripts/update.js‚Í‹@Šíó‘Ô•\¦‰æ–Ê‚ÅAAdventurer3‚Ìó‘Ô‚ğƒT[ƒo[‘¤‚É–â‚¢‡‚í‚¹‚·‚é‚½‚ß‚ÌƒXƒNƒŠƒvƒg‚ª“ü‚Á‚Ä‚¢‚éB<br>
+InServer.py‚ÍWebƒT[ƒo[‚ğ‹N“®‚·‚é‚½‚ß‚Ì‹N“_‚Æ‚È‚éƒ‚ƒWƒ…[ƒ‹B
+
+### ‹N“®•û–@
+Raspberry Pi‚Éƒtƒ@ƒCƒ‹—Ş‚ğ‚Á‚Ä‚¢‚Á‚ÄA`Python3 InServer.py`‚Å‹N“®B<br>
+ƒzƒXƒg–¼Aƒ|[ƒg‚ÍAŠÂ‹«•Ï”‚ÌSERVER_HOSTASERVER_PORT‚Åw’è‚Å‚«‚éB<br>
+ƒzƒXƒg–¼‚Ìİ’èŠÜ‚ßAŸ‚Ì‚æ‚¤‚É‹N“®‚µ‚½‚Ù‚¤‚ª‚¢‚¢‚©‚à‚µ‚ê‚È‚¢B<br>
+```sh
+export SERVER_HOST=`hostname -I`
+Python3 InServer.py
+```
+
 # License
 This software is released under the MIT License, see LICENSE.txt.
