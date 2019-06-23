@@ -94,26 +94,53 @@ def get_status():
     # 以下でjson形式のレスポンスデータが作製される
     return make_response(jsonify(retBody))
 
+@bp.route('/gcode', methods=['POST'])
+def gcode():
+    """Gコードを実行する"""
+    if bp.monitor != None and bp.monitor.is_alive():
+        var = request.json
+        retBody = {
+            "ret": bp.monitor.gcode(var['gcode'])
+        }
+    else:
+        retBody = {
+            "ret" : "ng"
+        }
+    return make_response(jsonify(retBody))
+
 class MonitoringAdventurer3(threading.Thread):
     """Adventurer3の機器監視"""
     def __init__(self, hostname):
         self.target = Adventurer3.Controller.Controller(hostname)
         self.is_continue = False
         self.image = None
+        self.lock = threading.Lock()
         return super().__init__()
 
+    def gcode(self, code):
+        """GコードをAdventurer3側に送信する"""
+        ret = "ng"
+        if self.lock.acquire():
+            if self.target.start():
+                ret = self.target.send(code)
+                self.target.end()
+            self.lock.release()
+        return ret
+
     def run(self):
+        """スレッドで動作する部分"""
         self.is_continue = True
         while self.is_continue:
-            try:
-                if self.target.start():
-                    self.target.update_status()
-                    self.target.end()
-                    self.image = Adventurer3.Controller.download_image(
-                        self.target.hostname)
-                else:
+            if self.lock.acquire():
+                try:
+                    if self.target.start():
+                        self.target.update_status()
+                        self.target.end()
+                        self.image = Adventurer3.Controller.download_image(
+                            self.target.hostname)
+                        time.sleep(2)
+                    else:
+                        self.is_continue = False
+                except:
                     self.is_continue = False
-                    break
-                time.sleep(2)
-            except:
-                self.is_continue = False
+                self.lock.release()

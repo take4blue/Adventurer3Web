@@ -1,4 +1,4 @@
-function callApi(url, jsonObj, callback) {
+﻿function callApi(url, jsonObj, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', url);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -31,10 +31,31 @@ function getStatus() {
             document.getElementById("SdProgress").innerHTML = retJson.SdProgress;
             document.getElementById("SdMax").innerHTML = retJson.SdMax;
             if (!retJson.IsConnect) {
-                // Adventurer3�Ƃ̐ڑ����؂ꂽ�̂ŁAdisplay.html�������[�h��/home.html�Ɏ����Ă���
+                // Adventurer3との接続が切れたので、display.htmlをリロードし/home.htmlに持っていく
                 location.reload();
+            }
+            if (retJson.Status == "Building" && document.getElementById("jobstop").innerHTML == "JOB停止") {
+                document.getElementById("jobstop").disabled = "";
+            }
+            else {
+                document.getElementById("jobstop").disabled = "true";
             }
         });
 }
 
-setInterval(getStatus, 2000)
+function jobStopButton() {
+    ret = confirm("Jobを停止します。よろしいですか？")
+    if (ret) {
+        document.getElementById("jobstop").disabled = "true";
+        document.getElementById("jobstop").innerHTML = "停止中"
+        callApi(
+            "gcode",
+            { "gcode": "M26" },
+            function (o) {
+                document.getElementById("jobstop").innerHTML = "JOB停止"
+            }
+        );
+    }
+}
+
+setInterval(getStatus, 5000)
